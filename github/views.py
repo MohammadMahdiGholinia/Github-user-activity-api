@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from .services import get_github_user_events
+from .serializers import GithubEventSerializer
 
 # Create your views here.
 
@@ -30,4 +31,10 @@ class GithubUserEventsView(APIView):
         except RuntimeError:
             return Response({"error": "GitHub API error"},status=502,)
 
-        return Response(events)
+        serializer = GithubEventSerializer(events, many=True)
+
+        return Response(serializer.data)
+
+
+
+        
