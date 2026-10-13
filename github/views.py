@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from .services import get_github_user_events
 from .serializers import GithubEventSerializer
 
+from django.core.cache import cache
+
 # Create your views here.
 
 class GithubUserEventsView(APIView):
@@ -12,6 +14,14 @@ class GithubUserEventsView(APIView):
 
         if not username:
             return Response({"error": "username is required"},status=400)
+
+        username = username.strip()
+        cache_key = f"github_events:{username.lower()}"
+
+        cached_events = cache.get(cache_key)
+
+        if cached_events is not None:
+            return Response(cached_events)
 
         try:
             events = get_github_user_events(username)
@@ -33,7 +43,11 @@ class GithubUserEventsView(APIView):
 
         serializer = GithubEventSerializer(events, many=True)
 
-        return Response(serializer.data)
+        data = list(serializer.data)
+
+        cache.set(cache_key, data, timeout=300)
+
+        return Response(data)
 
 
 
